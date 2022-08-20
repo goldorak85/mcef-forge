@@ -4,20 +4,40 @@
 
 package org.cef.browser;
 
+import com.google.gson.Gson;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
+import de.matthiasmann.twl.utils.PNGDecoder;
+import io.netty.handler.codec.base64.Base64Encoder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldVertexBufferUploader;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexFormat;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.utilities.Log;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import static org.lwjgl.opengl.EXTBGRA.GL_BGRA_EXT;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
 public class CefRenderer {
 
@@ -77,20 +97,25 @@ public class CefRenderer {
         }
     }
 
-    protected void render(PoseStack matrix, double x1, double y1, double x2, double y2) {
+    public static int img = -128;
+
+    protected void render(MatrixStack matrix, double x1, double y1, double x2, double y2) {
+        GL11.glEnable(GL11.GL_BLEND);
         Matrix4f positionMatrix = matrix.last().pose();
-        Tesselator t = Tesselator.getInstance();
+        Tessellator t = Tessellator.getInstance();
         BufferBuilder vb = t.getBuilder();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, texture_id_[0]);
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        RenderSystem.bindTexture(texture_id_[0]);
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         // previously GL_QUADS for drawmode
-        vb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        vb.begin(7, DefaultVertexFormats.POSITION_TEX);
         vb.vertex(positionMatrix, (float) x1, (float) y1, 0.0f).uv(0.0f, 1.0f).color(255, 255, 255, 255).endVertex();
         vb.vertex(positionMatrix, (float) x2, (float) y1, 0.0f).uv(1.f, 1.f).color(255, 255, 255, 255).endVertex();
         vb.vertex(positionMatrix, (float) x2, (float) y2, 0.0f).uv(1.f, 0.0f).color(255, 255, 255, 255).endVertex();
         vb.vertex(positionMatrix, (float) x1, (float) y2, 0.0f).uv(0.0f, 0.0f).color(255, 255, 255, 255).endVertex();
-        t.end();
+        vb.end();
+        RenderSystem.enableAlphaTest();
+        WorldVertexBufferUploader.end(vb);
+        GL11.glDisable(GL11.GL_BLEND);
     }
 
     protected void onPopupSize(Rectangle rect) {

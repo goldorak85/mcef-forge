@@ -4,7 +4,7 @@
 
 package org.cef.browser;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.api.IBrowser;
 import net.montoyo.mcef.api.IStringVisitor;
@@ -135,7 +135,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
     }
 
     @Override
-    public void draw(PoseStack matrixStack, double x1, double y1, double x2, double y2) {
+    public void draw(MatrixStack matrixStack, double x1, double y1, double x2, double y2) {
         renderer_.render(matrixStack, x1, y1, x2, y2);
     }
 

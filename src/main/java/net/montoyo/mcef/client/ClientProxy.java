@@ -1,11 +1,7 @@
 package net.montoyo.mcef.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -78,7 +74,7 @@ public class ClientProxy extends BaseProxy {
 
     public void onInitializeClient(FMLClientSetupEvent event) {
         Minecraft.getInstance().tell(() -> {
-            RenderSystem.assertOnRenderThread();
+            RenderSystem.assertThread(RenderSystem::isOnRenderThread); //TODO goLDO BACK PORT
 
             appHandler.setArgs(MCEF.CEF_ARGS);
 
@@ -256,11 +252,11 @@ public class ClientProxy extends BaseProxy {
         if (updateStr == null || !MCEF.WARN_UPDATES)
             return;
 
-        Style cs = Style.EMPTY;
+        /*Style cs = Style.EMPTY;
         cs.withColor(ChatFormatting.LIGHT_PURPLE);
 
         MutableComponent cct = (MutableComponent) Component.nullToEmpty(updateStr);
-        cct.withStyle(cs);
+        cct.withStyle(cs);*/ // TODO STYLE UPDATE
 
         //ev.getPlayer().displayClientMessage(cct, true);
     }
