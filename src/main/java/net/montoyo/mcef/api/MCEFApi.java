@@ -1,6 +1,6 @@
 package net.montoyo.mcef.api;
 
-import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.Loader;
 
 public class MCEFApi {
     
@@ -13,7 +13,6 @@ public class MCEFApi {
             Class cls = Class.forName("net.montoyo.mcef.MCEF");
             return (API) cls.getField("PROXY").get(null);
         } catch(Throwable t) {
-            System.out.println("API Instance retrieval failure!");
             t.printStackTrace();
             return null;
         }
@@ -24,7 +23,7 @@ public class MCEFApi {
      * @return true if it is loaded. false otherwise.
      */
     public static boolean isMCEFLoaded() {
-        return  ModList.get().isLoaded("forgecef");
+        return Loader.isModLoaded("mcef");
     }
 
 }

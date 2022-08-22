@@ -1,21 +1,24 @@
 package net.montoyo.mcef.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.client.SplashProgress;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.montoyo.mcef.BaseProxy;
 import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.api.IBrowser;
 import net.montoyo.mcef.api.IDisplayHandler;
 import net.montoyo.mcef.api.IJSQueryHandler;
 import net.montoyo.mcef.api.IScheme;
+import net.montoyo.mcef.coremod.ShutdownPatcher;
 import net.montoyo.mcef.example.ExampleMod;
 import net.montoyo.mcef.remote.RemoteConfig;
+import net.montoyo.mcef.utilities.ForgeProgressListener;
 import net.montoyo.mcef.utilities.IProgressListener;
 import net.montoyo.mcef.utilities.Log;
 import net.montoyo.mcef.utilities.Util;
@@ -34,6 +37,7 @@ import org.cef.handler.CefLifeSpanHandlerAdapter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -49,9 +53,8 @@ public class ClientProxy extends BaseProxy {
     private CefClient cefClient;
     private CefMessageRouter cefRouter;
     private final ArrayList<CefBrowserOsr> browsers = new ArrayList<>();
-    private final ArrayList<Object> nogc = new ArrayList<>();
     private String updateStr;
-    private final Minecraft mc = Minecraft.getInstance();
+    private final Minecraft mc = Minecraft.getMinecraft();
     private final DisplayHandler displayHandler = new DisplayHandler();
     private final HashMap<String, String> mimeTypeMap = new HashMap<>();
     private final AppHandler appHandler = new AppHandler();
@@ -65,116 +68,111 @@ public class ClientProxy extends BaseProxy {
 
     @Override
     public void onInit() {
-        super.onInit();
-        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        eventBus.addListener(this::onInitializeClient);
-        MinecraftForge.EVENT_BUS.addListener(this::onTickStart);
-        MinecraftForge.EVENT_BUS.addListener(this::onLogin);
-    }
+        appHandler.setArgs(MCEF.CEF_ARGS);
 
-    public void onInitializeClient(FMLClientSetupEvent event) {
-        Minecraft.getInstance().tell(() -> {
-            RenderSystem.assertThread(RenderSystem::isOnRenderThread); //TODO goLDO BACK PORT
+        boolean enableForgeSplash = false;
+        try {
+            Field f = SplashProgress.class.getDeclaredField("enabled");
+            f.setAccessible(true);
+            enableForgeSplash = f.getBoolean(null);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
 
-            appHandler.setArgs(MCEF.CEF_ARGS);
+        ROOT = mc.mcDataDir.getAbsolutePath().replaceAll("\\\\", "/");
+        if (ROOT.endsWith("."))
+            ROOT = ROOT.substring(0, ROOT.length() - 1);
 
-            ROOT = mc.gameDirectory.getAbsolutePath().replaceAll("\\\\", "/");
-            if (ROOT.endsWith("."))
-                ROOT = ROOT.substring(0, ROOT.length() - 1);
+        if (ROOT.endsWith("/"))
+            ROOT = ROOT.substring(0, ROOT.length() - 1);
 
-            if (ROOT.endsWith("/"))
-                ROOT = ROOT.substring(0, ROOT.length() - 1);
+        JCEF_ROOT = ROOT + "/jcef";
 
-            JCEF_ROOT = ROOT + "/jcef";
+        File fileListing = new File(new File(ROOT), "config");
 
-            File fileListing = new File(new File(ROOT), "config");
-
-            IProgressListener ipl;
-            RemoteConfig cfg = new RemoteConfig();
-            // Forge splash used to run here
-            System.out.println("SYSTEM HEADLESS PROPERTY: " + System.getProperty("java.awt.headless"));
-            System.setProperty("java.awt.headless","false"); // local is bugged for me
+        IProgressListener ipl;
+        RemoteConfig cfg = new RemoteConfig();
+        if (MCEF.USE_FORGE_SPLASH && enableForgeSplash)
+            ipl = new ForgeProgressListener();
+        else
             ipl = new UpdateFrame();
 
-            cfg.load();
+        cfg.load();
 
-            System.out.println("Updating MCEF file listing ");
+        if (!cfg.updateFileListing(fileListing, false))
+            Log.warning("There was a problem while establishing file list. Uninstall may not delete all files.");
 
-            if (!cfg.updateFileListing(fileListing, false))
-                Log.warning("There was a problem while establishing file list. Uninstall may not delete all files.");
+        if (!cfg.downloadMissing(ipl)) {
+            Log.warning("Going in virtual mode; couldn't download resources.");
+            VIRTUAL = true;
+            return;
+        }
 
-            System.out.println("Updating MCEF missing files... ");
+        if (!cfg.updateFileListing(fileListing, true))
+            Log.warning("There was a problem while updating file list. Uninstall may not delete all files.");
 
-            if (!cfg.downloadMissing(ipl)) {
-                Log.warning("Going in virtual mode; couldn't download resources.");
-                VIRTUAL = true;
-                return;
-            }
+        updateStr = cfg.getUpdateString();
+        ipl.onProgressEnd();
 
-            if (!cfg.updateFileListing(fileListing, true))
-                Log.warning("There was a problem while updating file list. Uninstall may not delete all files.");
+        if (OS.isLinux()) {
+            File subproc = new File(JCEF_ROOT, "jcef_helper");
 
-            updateStr = cfg.getUpdateString();
-            ipl.onProgressEnd();
+            // Attempt to make the CEF subprocess executable if not
+            if (!subproc.canExecute()) {
+                try {
+                    int retCode = Runtime.getRuntime().exec(new String[]{"/usr/bin/chmod", "+x", subproc.getAbsolutePath()}).waitFor();
 
-            if (OS.isLinux()) {
-                File subproc = new File(JCEF_ROOT, "jcef_helper");
-
-                // Attempt to make the CEF subprocess executable if not
-                if (!subproc.canExecute()) {
-                    try {
-                        int retCode = Runtime.getRuntime().exec(new String[]{"/usr/bin/chmod", "+x", subproc.getAbsolutePath()}).waitFor();
-
-                        if (retCode != 0)
-                            throw new RuntimeException("chmod exited with code " + retCode);
-                    } catch (Throwable t) {
-                        Log.errorEx("Error while giving execution rights to jcef_helper. MCEF will enter virtual mode. You can fix this by chmoding jcef_helper manually.", t);
-                        VIRTUAL = true;
-                    }
+                    if (retCode != 0)
+                        throw new RuntimeException("chmod exited with code " + retCode);
+                } catch (Throwable t) {
+                    Log.errorEx("Error while giving execution rights to jcef_helper. MCEF will enter virtual mode. You can fix this by chmoding jcef_helper manually.", t);
+                    VIRTUAL = true;
                 }
             }
+        }
 
-            if (VIRTUAL)
-                return;
+        if (VIRTUAL)
+            return;
 
-            CefSettings settings = new CefSettings();
-            settings.windowless_rendering_enabled = true;
-            settings.background_color = settings.new ColorType(0, 255, 255, 255);
-            settings.cache_path = (new File(JCEF_ROOT, "cache")).getAbsolutePath();
-            // settings.user_agent = "MCEF"
+        CefSettings settings = new CefSettings();
+        settings.windowless_rendering_enabled = true;
+        settings.background_color = settings.new ColorType(0, 255, 255, 255);
+        settings.cache_path = (new File(JCEF_ROOT, "cache")).getAbsolutePath();
 
-            CefApp.startup(MCEF.CEF_ARGS);
-            cefApp = CefApp.getInstance(settings);
+        CefApp.startup(MCEF.CEF_ARGS);
+        cefApp = CefApp.getInstance(settings);
 
-            // Custom scheme broken on Linux, for now
-            if (!OS.isLinux()) {
-                CefApp.addAppHandler(appHandler);
+        // Custom scheme broken on Linux, for now
+        if (!OS.isLinux()) {
+            CefApp.addAppHandler(appHandler);
+        }
+
+        loadMimeTypeMapping();
+
+        cefClient = cefApp.createClient();
+
+        Log.info(cefApp.getVersion().toString());
+        cefRouter = CefMessageRouter.create(new CefMessageRouterConfig("mcefQuery", "mcefCancel"));
+        cefClient.addMessageRouter(cefRouter);
+        cefClient.addDisplayHandler(displayHandler);
+        cefClient.addLifeSpanHandler(new CefLifeSpanHandlerAdapter() {
+            @Override
+            public boolean doClose(CefBrowser browser) {
+                browser.close(true);
+                return false;
             }
-
-            loadMimeTypeMapping();
-
-            cefClient = cefApp.createClient();
-
-            Log.info(cefApp.getVersion().toString());
-            cefRouter = CefMessageRouter.create(new CefMessageRouterConfig("mcefQuery", "mcefCancel"));
-            cefClient.addMessageRouter(cefRouter);
-            cefClient.addDisplayHandler(displayHandler);
-            cefClient.addLifeSpanHandler(new CefLifeSpanHandlerAdapter() {
-                @Override
-                public boolean doClose(CefBrowser browser) {
-                    browser.close(true);
-                    return false;
-                }
-            });
-
-            // If shutdown patcher fail runs shutdown patcher
-            // removed!
-
-            if (MCEF.ENABLE_EXAMPLE)
-                exampleMod.onInit();
-
-            Log.info("MCEF loaded successfuly.");
         });
+
+        if (!ShutdownPatcher.didPatchSucceed()) {
+            Log.warning("ShutdownPatcher failed to patch Minecraft.run() method; starting ShutdownThread...");
+            (new ShutdownThread()).start();
+        }
+
+        MinecraftForge.EVENT_BUS.register(this);
+        if (MCEF.ENABLE_EXAMPLE)
+            exampleMod.onInit();
+
+        Log.info("MCEF loaded successfuly.");
     }
 
     public CefApp getCefApp() {
@@ -186,19 +184,10 @@ public class ClientProxy extends BaseProxy {
         if (VIRTUAL)
             return new VirtualBrowser();
 
-        System.out.println("Creating CEF browser at url " + url);
-
         CefBrowserOsr ret = (CefBrowserOsr) cefClient.createBrowser(url, true, transp);
         ret.setCloseAllowed();
         ret.createImmediately();
-        ret.loadURL("http://localhost:8181");
 
-        /*CefBrowserWr ret2 = (CefBrowserWr) cefClient.createBrowser(url, false, transp);
-        ret2.setCloseAllowed();
-        ret2.createImmediately();
-        ret2.loadURL("http://localhost:8181");
-
-        nogc.add(ret2);*/
         browsers.add(ret);
         return ret;
     }
@@ -235,30 +224,34 @@ public class ClientProxy extends BaseProxy {
         return appHandler.isSchemeRegistered(name);
     }
 
-    public void onTickStart(TickEvent.ClientTickEvent event) {
-        mc.getProfiler().push("MCEF");
+    @SubscribeEvent
+    public void onTick(TickEvent.RenderTickEvent ev) {
+        if (ev.phase == TickEvent.Phase.START) {
+            mc.mcProfiler.startSection("MCEF");
 
-        if (cefApp != null)
-            cefApp.N_DoMessageLoopWork();
+            if (cefApp != null)
+                cefApp.N_DoMessageLoopWork();
 
-        for (CefBrowserOsr b : browsers)
-            b.mcefUpdate();
+            for (CefBrowserOsr b : browsers)
+                b.mcefUpdate();
 
-        displayHandler.update();
-        mc.getProfiler().pop();
+            displayHandler.update();
+            mc.mcProfiler.endSection();
+        }
     }
 
+    @SubscribeEvent
     public void onLogin(PlayerEvent.PlayerLoggedInEvent ev) {
         if (updateStr == null || !MCEF.WARN_UPDATES)
             return;
 
-        /*Style cs = Style.EMPTY;
-        cs.withColor(ChatFormatting.LIGHT_PURPLE);
+        Style cs = new Style();
+        cs.setColor(TextFormatting.LIGHT_PURPLE);
 
-        MutableComponent cct = (MutableComponent) Component.nullToEmpty(updateStr);
-        cct.withStyle(cs);*/ // TODO STYLE UPDATE
+        TextComponentString cct = new TextComponentString(updateStr);
+        cct.setStyle(cs);
 
-        //ev.getPlayer().displayClientMessage(cct, true);
+        ev.player.sendMessage(cct);
     }
 
     public void removeBrowser(CefBrowserOsr b) {

@@ -1,22 +1,28 @@
 package net.montoyo.mcef.remote;
 
-import com.google.gson.*;
-import net.minecraft.client.Minecraft;
-import net.montoyo.mcef.MCEF;
-import net.montoyo.mcef.client.ClientProxy;
-import net.montoyo.mcef.setup.FileListing;
-import net.montoyo.mcef.utilities.IProgressListener;
-import net.montoyo.mcef.utilities.Log;
-import net.montoyo.mcef.utilities.Util;
-import net.montoyo.mcef.utilities.Version;
-import org.cef.OS;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import net.minecraft.client.Minecraft;
+import net.montoyo.mcef.setup.FileListing;
+import org.cef.OS;
+
+import net.montoyo.mcef.MCEF;
+import net.montoyo.mcef.client.ClientProxy;
+import net.montoyo.mcef.utilities.IProgressListener;
+import net.montoyo.mcef.utilities.Log;
+import net.montoyo.mcef.utilities.Util;
+import net.montoyo.mcef.utilities.Version;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import static net.montoyo.mcef.client.ClientProxy.JCEF_ROOT;
 
@@ -161,15 +167,11 @@ public class RemoteConfig {
                     extract.add(e.getAsString());
             }
         }
-
-        String actualVersion = String.valueOf(Minecraft.getInstance().getGame().getVersion());
         
         JsonElement mcVersions = json.get("latestVersions");
         if(mcVersions != null && mcVersions.isJsonObject()) {
-            JsonElement cVer = mcVersions.getAsJsonObject().get("1.19");
+            JsonElement cVer = mcVersions.getAsJsonObject().get(Minecraft.getMinecraft().getVersion());
 
-            // My glibc version is 2.31 :( so newer doesn't work
-            
             if(cVer != null && cVer.isJsonPrimitive())
                 version = cVer.getAsString();
         }

@@ -475,8 +475,6 @@ public class CefApp extends CefAppHandlerAdapter {
     public static final boolean startup(String[] args) {
         String jcefPath = getJcefLibPath();
 
-        System.out.println("JCEF Path -> " + jcefPath);
-
         if (OS.isWindows()) {
             System.load(jcefPath + "\\d3dcompiler_47.dll");
             System.load(jcefPath + "\\libGLESv2.dll");
@@ -487,7 +485,9 @@ public class CefApp extends CefAppHandlerAdapter {
             return true;
         } else if (OS.isMacintosh()) {
             System.load(jcefPath + "/libjcef.dylib");
-            return N_Startup(getCefFrameworkPath(args));
+            String tmp = getCefFrameworkPath(args);
+            System.out.println(tmp);
+            return N_Startup(tmp);
         } else if (OS.isLinux()) {
             System.load(jcefPath + "/libcef.so");
             System.load(jcefPath + "/libjcef.so");

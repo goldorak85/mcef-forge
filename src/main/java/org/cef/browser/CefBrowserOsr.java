@@ -4,13 +4,11 @@
 
 package org.cef.browser;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.api.IBrowser;
 import net.montoyo.mcef.api.IStringVisitor;
 import net.montoyo.mcef.client.ClientProxy;
 import net.montoyo.mcef.client.StringVisitor;
-import net.montoyo.mcef.client.UnsafeExample;
 import net.montoyo.mcef.utilities.Log;
 import org.apache.commons.lang3.NotImplementedException;
 import org.cef.CefClient;
@@ -18,6 +16,7 @@ import org.cef.callback.CefDragData;
 import org.cef.handler.CefRenderHandler;
 import org.cef.handler.CefScreenInfo;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -28,9 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import static java.awt.event.KeyEvent.*;
-import static org.lwjgl.glfw.GLFW.*;
 
 /**
  * This class represents an off-screen rendered browser.
@@ -88,7 +84,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
     protected CefBrowser_N createDevToolsBrowser(CefClient client, String url,
                                                  CefRequestContext context, CefBrowser_N parent, Point inspectAt) {
         return new CefBrowserOsr(
-                client, url, isTransparent_, context, this, inspectAt);
+                client, url, isTransparent_, context, (CefBrowserOsr) this, inspectAt);
     }
 
     @Override
@@ -135,8 +131,8 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
     }
 
     @Override
-    public void draw(MatrixStack matrixStack, double x1, double y1, double x2, double y2) {
-        renderer_.render(matrixStack, x1, y1, x2, y2);
+    public void draw(double x1, double y1, double x2, double y2) {
+        renderer_.render(x1, y1, x2, y2);
     }
 
     @Override
@@ -160,49 +156,39 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
     }
 
     @Override
-    public void injectKeyTyped(int key, int mods) {
-        if( key != GLFW_KEY_BACKSPACE && key != VK_UNDEFINED) {
-            KeyEvent ev = new UnsafeExample().makeEvent(dc_, key, (char) key, KEY_LOCATION_UNKNOWN, KEY_TYPED, 0, mods);
-            sendKeyEvent(ev);
-        } else {
-            switch (key) {
-                case GLFW_KEY_HOME, VK_END, VK_PAGE_UP, VK_PAGE_DOWN, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_BEGIN, VK_KP_LEFT, VK_KP_UP, VK_KP_RIGHT, VK_KP_DOWN, VK_F1, VK_F2, VK_F3, VK_F4, VK_F5, VK_F6, VK_F7, VK_F8, VK_F9, VK_F10, VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F16, VK_F17, VK_F18, VK_F19, VK_F20, VK_F21, VK_F22, VK_F23, VK_F24, VK_PRINTSCREEN, VK_SCROLL_LOCK, VK_CAPS_LOCK, VK_NUM_LOCK, VK_PAUSE, GLFW_KEY_INSERT, GLFW_KEY_BACKSPACE -> {
-                    KeyEvent ev = new UnsafeExample().makeEvent(dc_, key, '\0', KEY_LOCATION_UNKNOWN, KEY_TYPED,0, mods);
-                    sendKeyEvent(ev);
-                }
-            }
-        }
+    public void injectKeyTyped(char c, int mods) {
+        KeyEvent ev = new KeyEvent(dc_, KeyEvent.KEY_TYPED, 0, mods, 0, c);
+        sendKeyEvent(ev);
     }
 
     public static int remapKeycode(int kc, char c) {
         switch (kc) {
-            // Unable to remap
-            case GLFW_KEY_BACKSPACE:
+            case Keyboard.KEY_BACK:
                 return KeyEvent.VK_BACK_SPACE;
-            case GLFW_KEY_DELETE:
+            case Keyboard.KEY_DELETE:
                 return KeyEvent.VK_DELETE;
-            case GLFW_KEY_DOWN:
+            case Keyboard.KEY_DOWN:
                 return KeyEvent.VK_DOWN;
-            case GLFW_KEY_ENTER:
+            case Keyboard.KEY_RETURN:
                 return KeyEvent.VK_ENTER;
-            case GLFW_KEY_ESCAPE:
+            case Keyboard.KEY_ESCAPE:
                 return KeyEvent.VK_ESCAPE;
-            case GLFW_KEY_LEFT:
+            case Keyboard.KEY_LEFT:
                 return KeyEvent.VK_LEFT;
-            case GLFW_KEY_RIGHT:
+            case Keyboard.KEY_RIGHT:
                 return KeyEvent.VK_RIGHT;
-            case GLFW_KEY_TAB:
+            case Keyboard.KEY_TAB:
                 return KeyEvent.VK_TAB;
-            case GLFW_KEY_UP:
+            case Keyboard.KEY_UP:
                 return KeyEvent.VK_UP;
-            case GLFW_KEY_PAGE_UP:
+            case Keyboard.KEY_PRIOR:
                 return KeyEvent.VK_PAGE_UP;
-            case GLFW_KEY_PAGE_DOWN:
+            case Keyboard.KEY_NEXT:
                 return KeyEvent.VK_PAGE_DOWN;
-            case GLFW_KEY_END:
-                return GLFW_KEY_END;
-            case GLFW_KEY_HOME:
-                return GLFW_KEY_HOME;
+            case Keyboard.KEY_END:
+                return Keyboard.KEY_END;
+            case Keyboard.KEY_HOME:
+                return Keyboard.KEY_HOME;
             default:
                 return c;
         }
@@ -285,8 +271,6 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
                 if (paintData.buffer == null || size != paintData.buffer.capacity()) //This only happens when the browser gets resized
                     paintData.buffer = BufferUtils.createByteBuffer(size);
 
-                BufferUtils.zeroBuffer(paintData.buffer);
-
                 paintData.buffer.position(0);
                 paintData.buffer.limit(buffer.limit());
                 buffer.position(0);
@@ -304,12 +288,9 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
     public void mcefUpdate() {
         synchronized (paintData) {
             if (paintData.hasFrame) {
-                //System.out.println("New frame!");
                 renderer_.onPaint(false, paintData.dirtyRects, paintData.buffer, paintData.width, paintData.height, paintData.fullReRender);
                 paintData.hasFrame = false;
                 paintData.fullReRender = false;
-            }else {
-
             }
         }
 
