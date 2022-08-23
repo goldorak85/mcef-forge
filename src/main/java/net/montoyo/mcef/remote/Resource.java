@@ -83,7 +83,8 @@ public class Resource {
      * @return true if the operation was successful.
      */
     public boolean extract(IProgressListener ipl) {
-        Util.secure(ipl).onTaskChanged("Extracting " + name);
+        if (ipl != null)
+            Util.secure(ipl).onTaskChanged("Extracting " + name);
         return Util.extract(new File(ClientProxy.JCEF_ROOT, name), new File(ClientProxy.JCEF_ROOT));
     }
 

@@ -171,9 +171,11 @@ public class Util {
      */
     public static boolean download(String res, File dst, boolean gzip, IProgressListener ph) {
         String err = "Couldn't download " + dst.getName() + "!";
-        
-        ph = secure(ph);
-        ph.onTaskChanged("Downloading " + dst.getName());
+
+        if (ph != null) {
+            ph = secure(ph);
+            ph.onTaskChanged("Downloading " + dst.getName());
+        }
         
         SizedInputStream sis = openStream(res, err);
         if(sis == null)
@@ -215,7 +217,8 @@ public class Util {
                 fos.write(data, 0, read);
                 
                 cur += (double) sis.resetLengthCounter();
-                ph.onProgressed(cur / total * 100.d);
+                if (ph != null)
+                    ph.onProgressed(cur / total * 100.d);
             }
             
             return true;

@@ -89,12 +89,12 @@ public class ClientProxy extends BaseProxy {
 
             File fileListing = new File(new File(ROOT), "config");
 
-            IProgressListener ipl;
+            IProgressListener ipl = null;
             RemoteConfig cfg = new RemoteConfig();
             // Forge splash used to run here
             System.out.println("SYSTEM HEADLESS PROPERTY: " + System.getProperty("java.awt.headless"));
-            System.setProperty("java.awt.headless","false"); // local is bugged for me
-            ipl = new UpdateFrame();
+            System.setProperty("java.awt.headless","true"); // local is bugged for me
+            //ipl = new UpdateFrame();
 
             cfg.load();
 
@@ -115,7 +115,8 @@ public class ClientProxy extends BaseProxy {
                 Log.warning("There was a problem while updating file list. Uninstall may not delete all files.");
 
             updateStr = cfg.getUpdateString();
-            ipl.onProgressEnd();
+            if (ipl != null)
+                ipl.onProgressEnd();
 
             if (OS.isLinux()) {
                 File subproc = new File(JCEF_ROOT, "jcef_helper");
