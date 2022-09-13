@@ -20,13 +20,14 @@ public class MCEF {
     public static boolean CHECK_VRAM_LEAK;
     public static boolean SHUTDOWN_JCEF;
     public static boolean SECURE_MIRRORS_ONLY;
+    public static boolean DEBUG;
 
     public static MCEF INSTANCE;
 
     public static BaseProxy PROXY = DistExecutor.<BaseProxy>runForDist(() -> ClientProxy::new, () -> BaseProxy::new);
 
     public MCEF() {
-        System.out.println("MCEF Initalizing...");
+        MCEF.debug("MCEF Initalizing...");
         Log.info("Loading MCEF config...");
         Configuration cfg = new Configuration();
 
@@ -39,13 +40,14 @@ public class MCEF {
         CEF_ARGS = cfg.getString("cefArgs", "main", "", "Command line arguments passed to CEF. For advanced users.").split("\\s+");
         SHUTDOWN_JCEF = cfg.getBoolean("shutdownJcef", "main", false, "Set this to true if your Java process hangs after closing Minecraft. This is disabled by default because it makes the launcher think Minecraft crashed...");
         SECURE_MIRRORS_ONLY = cfg.getBoolean("secureMirrorsOnly", "main", true, "Only enable secure (HTTPS) mirror. This should be kept to true unless you know what you're doing.");
+        DEBUG = cfg.getBoolean("debug", "main", false, "Enable debug print.");
 
         String mirror = cfg.getString("forcedMirror", "main", "", "A URL that contains every MCEF resources; for instance https://montoyo.net/jcef.").trim();
         if (mirror.length() > 0)
             FORCE_MIRROR = mirror;
 
         //Config: exampleBrowser
-        ENABLE_EXAMPLE = cfg.getBoolean("enable", "exampleBrowser", true, "Set this to false if you don't want to enable the F10 browser.");
+        ENABLE_EXAMPLE = cfg.getBoolean("enable", "exampleBrowser", false, "Set this to false if you don't want to enable the F10 browser.");
         HOME_PAGE = cfg.getString("home", "exampleBrowser", "https://www.vsynctester.com/testing/mouse.html", "The home page of the F10 browser.");
 
         //Config: debug
@@ -69,6 +71,11 @@ public class MCEF {
 
     public static void onMinecraftShutdown() {
         PROXY.onShutdown();
+    }
+
+    public static void debug(String message) {
+        if (DEBUG)
+            System.out.println(message);
     }
 
 }

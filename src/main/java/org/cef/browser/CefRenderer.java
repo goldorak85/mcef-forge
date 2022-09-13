@@ -161,29 +161,29 @@ public class CefRenderer {
         GlStateManager._enableTexture();
         GlStateManager._bindTexture(texture_id_[0]);
 
-        //System.out.println("ON BROWSER PAINT");
+        MCEF.debug("ON BROWSER PAINT");
 
         int oldAlignement = GlStateManager._getInteger(GL_UNPACK_ALIGNMENT);
-        //System.out.println("glGetInteger ok");
+        MCEF.debug("glGetInteger ok");
         GlStateManager._pixelStore(GL_UNPACK_ALIGNMENT, 1);
-        //System.out.println("glPixelStore ok");
+        MCEF.debug("glPixelStore ok");
         if (!popup) {
             if (completeReRender || width != view_width_ || height != view_height_) {
                 // Update/resize the whole texture.
                 view_width_ = width;
                 view_height_ = height;
-                //System.out.println("going to glTexImage2D " + width + " " + height + " " + buffer.limit());
+                MCEF.debug("going to glTexImage2D " + width + " " + height + " " + buffer.limit());
                 GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS,0);
                 GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS,0);
                 GlStateManager._texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, view_width_, view_height_, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, buffer.asIntBuffer());
-                //System.out.println("glTexImage2D ok");
+                MCEF.debug("glTexImage2D ok");
             } else {
-                // System.out.println("Noncomplete rerender processing pixel store");
+                MCEF.debug("Noncomplete rerender processing pixel store");
                 GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, view_width_);
 
                 // Update just the dirty rectangles.
                 for (Rectangle rect : dirtyRects) {
-                    //System.out.println("Updating rect");
+                    MCEF.debug("Updating rect");
                     if (rect.x < 0 || rect.y < 0 || rect.x + rect.width > view_width_ || rect.y + rect.height > view_height_)
                         Log.warning("Bad data passed to CefRenderer.onPaint() triggered safe guards... (2)");
                     else {
@@ -192,13 +192,13 @@ public class CefRenderer {
                         glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x, rect.y, rect.width, rect.height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, buffer);
                     }
                 }
-                //System.out.println("More GLPixel store stuff");
+                MCEF.debug("More GLPixel store stuff");
                 GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
                 GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
                 GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, 0);
             }
         } else if (popup_rect_.width > 0 && popup_rect_.height > 0) {
-            System.out.println("Processing popup");
+            MCEF.debug("Processing popup");
             int skip_pixels = 0, x = popup_rect_.x;
             int skip_rows = 0, y = popup_rect_.y;
             int w = width;
@@ -219,7 +219,7 @@ public class CefRenderer {
                 h -= y + h - view_height_;
 
             // Update the popup rectangle.
-            //System.out.println("glPixelStorei...");
+            MCEF.debug("glPixelStorei...");
             GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, width);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, skip_pixels);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, skip_rows);
@@ -228,7 +228,7 @@ public class CefRenderer {
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
         }
-        //System.out.println("glPixelStorei final...");
+        MCEF.debug("glPixelStorei final...");
         GlStateManager._pixelStore(GL_UNPACK_ALIGNMENT, oldAlignement);
         GlStateManager._bindTexture(0);
     }

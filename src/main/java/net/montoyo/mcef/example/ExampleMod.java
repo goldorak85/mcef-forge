@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.api.*;
 import net.montoyo.mcef.utilities.Log;
 import org.lwjgl.glfw.GLFW;
@@ -118,7 +119,7 @@ public class ExampleMod implements IDisplayHandler, IJSQueryHandler {
         if(b != null && query.equalsIgnoreCase("username")) {
             if(b.getURL().startsWith("mod://")) {
                 //Only allow MCEF URLs to get the player's username to keep his identity secret
-                System.out.println("Passe URL !");
+                MCEF.debug("Load URL !");
                 mc.submitAsync(() -> { /// TODO GOLDO PORT ?
                     //Add this to a scheduled task because this is NOT called from the main Minecraft thread...
 

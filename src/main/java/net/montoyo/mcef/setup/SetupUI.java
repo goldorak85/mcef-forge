@@ -1,5 +1,7 @@
 package net.montoyo.mcef.setup;
 
+import net.montoyo.mcef.MCEF;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -128,8 +130,8 @@ public class SetupUI implements ActionListener, WindowListener, MouseListener {
         java += selfDestruct.getAbsolutePath();
         java += "\"";
 
-        System.out.println("Running auto-deleter:");
-        System.out.println(java);
+        MCEF.debug("Running auto-deleter:");
+        MCEF.debug(java);
         Runtime.getRuntime().exec(java);
     }
 

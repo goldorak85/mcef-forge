@@ -92,7 +92,7 @@ public class ClientProxy extends BaseProxy {
             IProgressListener ipl = null;
             RemoteConfig cfg = new RemoteConfig();
             // Forge splash used to run here
-            System.out.println("SYSTEM HEADLESS PROPERTY: " + System.getProperty("java.awt.headless"));
+            MCEF.debug("SYSTEM HEADLESS PROPERTY: " + System.getProperty("java.awt.headless"));
             if (OS.isMacintosh()) {
                 System.setProperty("java.awt.headless", "true");
                 ipl = new UpdateFrameMacOS();
@@ -103,12 +103,12 @@ public class ClientProxy extends BaseProxy {
 
             cfg.load();
 
-            System.out.println("Updating MCEF file listing ");
+            MCEF.debug("Updating MCEF file listing ");
 
             if (!cfg.updateFileListing(fileListing, false))
                 Log.warning("There was a problem while establishing file list. Uninstall may not delete all files.");
 
-            System.out.println("Updating MCEF missing files... ");
+            MCEF.debug("Updating MCEF missing files... ");
 
             if (!cfg.downloadMissing(ipl)) {
                 Log.warning("Going in virtual mode; couldn't download resources.");
@@ -189,7 +189,7 @@ public class ClientProxy extends BaseProxy {
         if (VIRTUAL)
             return new VirtualBrowser();
 
-        System.out.println("Creating CEF browser at url " + url);
+        MCEF.debug("Creating CEF browser at url " + url);
 
         CefBrowserOsr ret = (CefBrowserOsr) cefClient.createBrowser(url, true, transp);
         ret.setCloseAllowed();

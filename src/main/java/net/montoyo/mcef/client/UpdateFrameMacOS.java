@@ -1,5 +1,6 @@
 package net.montoyo.mcef.client;
 
+import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.utilities.IProgressListener;
 import net.montoyo.mcef.utilities.Log;
 import net.montoyo.mcef.utilities.Util;
@@ -13,7 +14,7 @@ public class UpdateFrameMacOS implements IProgressListener {
     @Override
     public void onProgressed(double d) {
         int val = (int) Util.clamp(d, 0.d, 100.d);
-        System.out.println(val);
+        MCEF.debug(String.valueOf(val));
     }
 
     @Override

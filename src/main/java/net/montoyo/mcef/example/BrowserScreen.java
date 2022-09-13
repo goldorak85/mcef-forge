@@ -184,7 +184,7 @@ public class BrowserScreen extends Screen {
             return true;
         }
         if(keyCode == GLFW.GLFW_KEY_F10){
-            System.out.println("Early term F10");
+            MCEF.debug("Early term F10");
             if(pressed && System.currentTimeMillis() - this.initTime > 1000L) {
                 url.setFocus(!url.isFocused());
             } //TODO REMAKE BAR
@@ -195,14 +195,14 @@ public class BrowserScreen extends Screen {
         InputConstants.Key iuKey = InputConstants.getKey(keyCode, scanCode); //TODO REMAKED BY GOLDO
         String keystr = iuKey.getDisplayName().getString();
         //String keystr = GLFW.glfwGetKeyName(keyCode, scanCode);
-        System.out.println("KEY STR " + keystr);
+        MCEF.debug("KEY STR " + keystr);
         if(keystr.length() == 0){
             return false;
         }
         char key = keystr.charAt(keystr.length() - 1);
 
         if(browser != null && !focused) { //Inject events into browser  // //TODO REMAKE BAR (&& !focused)
-            System.out.println("Sent keystroke " + keystr);
+            MCEF.debug("Sent keystroke " + keystr);
             if(pressed)
                 browser.injectKeyPressedByKeyCode(keyCode, key, 0);
             else
@@ -250,7 +250,7 @@ public class BrowserScreen extends Screen {
         if(browser != null) { //Inject events into browser. TODO: Handle mods & leaving.
             int y = scaleY(sy - 20); //Don't forget to flip Y axis.
 
-            System.out.println("Dest coords " + sx + " " + y + " button " + btn + " " + pressed);
+            MCEF.debug("Dest coords " + sx + " " + y + " button " + btn + " " + pressed);
 
             if(wheel != 0)
                 browser.injectMouseWheel(sx, y, 0,  wheel, 0);
