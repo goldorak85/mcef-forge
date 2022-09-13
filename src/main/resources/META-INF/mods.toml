@@ -10,11 +10,11 @@ issueTrackerURL="" #optional
 
 modId="forgecef" #mandatory
 
-version="1.1.0" #mandatory
+version="1.2.0" #mandatory
 
 displayName="MCEF" #mandatory
 
-displayURL="https://github.com/Mysticpasta1/mcef-forge" #optional
+displayURL="https://github.com/goldorak85/mcef-forge" #optional
 
 logoFile= "" #optional
 
