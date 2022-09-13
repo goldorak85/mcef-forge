@@ -85,7 +85,7 @@ public class ClientProxy extends BaseProxy {
             if (ROOT.endsWith("/"))
                 ROOT = ROOT.substring(0, ROOT.length() - 1);
 
-            JCEF_ROOT = ROOT + "/jcef";
+            JCEF_ROOT = ROOT + "/externalLibraries/jcef";
 
             File fileListing = new File(new File(ROOT), "config");
 
