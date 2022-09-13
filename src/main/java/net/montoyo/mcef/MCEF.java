@@ -46,7 +46,7 @@ public class MCEF {
 
         //Config: exampleBrowser
         ENABLE_EXAMPLE = cfg.getBoolean("enable", "exampleBrowser", true, "Set this to false if you don't want to enable the F10 browser.");
-        HOME_PAGE = cfg.getString("home", "exampleBrowser", "https://google.fr/", "The home page of the F10 browser.");
+        HOME_PAGE = cfg.getString("home", "exampleBrowser", "https://www.vsynctester.com/testing/mouse.html", "The home page of the F10 browser.");
 
         //Config: debug
         CHECK_VRAM_LEAK = cfg.getBoolean("checkForVRAMLeak", "debug", false, "Track allocated OpenGL textures to make sure there's no leak");
@@ -54,13 +54,19 @@ public class MCEF {
 
         PROXY.onPreInit();
         this.onInit(); // old init
+
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                onMinecraftShutdown();
+            }
+        }));
     }
 
     public void onInit() {
         PROXY.onInit();
     }
 
-    //Called by mixin
     public static void onMinecraftShutdown() {
         PROXY.onShutdown();
     }

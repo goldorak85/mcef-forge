@@ -61,6 +61,7 @@ public class BrowserScreen extends Screen {
         }
 
         //Resize the browser if window size changed
+        browser.resize(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight() - scaleY(20));
 
 
 
@@ -141,8 +142,8 @@ public class BrowserScreen extends Screen {
             //GlStateManager._disableTexture();
             // GlStateManager._clearColor(1.0f,1.0f,1.0f,1.0f);
             // GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            browser.injectMouseMove(scaleX(mouseX), scaleY(mouseY) - scaleY(20), 0, false);
             browser.draw(matrices, .0d, height, width, 20.d); //Don't forget to flip Y axis.
-            browser.injectMouseMove(mouseX, mouseY, 0, false);
             //GlStateManager._enableDepthTest();
         }
     }

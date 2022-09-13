@@ -93,8 +93,13 @@ public class ClientProxy extends BaseProxy {
             RemoteConfig cfg = new RemoteConfig();
             // Forge splash used to run here
             System.out.println("SYSTEM HEADLESS PROPERTY: " + System.getProperty("java.awt.headless"));
-            System.setProperty("java.awt.headless","true"); // local is bugged for me
-            //ipl = new UpdateFrame();
+            if (OS.isMacintosh()) {
+                System.setProperty("java.awt.headless", "true");
+                ipl = new UpdateFrameMacOS();
+            } else {
+                System.setProperty("java.awt.headless", "false"); // Disable headless of java awt (Crash in macos)
+                ipl = new UpdateFrame();
+            }
 
             cfg.load();
 
@@ -168,9 +173,6 @@ public class ClientProxy extends BaseProxy {
                 }
             });
 
-            // If shutdown patcher fail runs shutdown patcher
-            // removed!
-
             if (MCEF.ENABLE_EXAMPLE)
                 exampleMod.onInit();
 
@@ -192,14 +194,6 @@ public class ClientProxy extends BaseProxy {
         CefBrowserOsr ret = (CefBrowserOsr) cefClient.createBrowser(url, true, transp);
         ret.setCloseAllowed();
         ret.createImmediately();
-        ret.loadURL("http://localhost:8181");
-
-        /*CefBrowserWr ret2 = (CefBrowserWr) cefClient.createBrowser(url, false, transp);
-        ret2.setCloseAllowed();
-        ret2.createImmediately();
-        ret2.loadURL("http://localhost:8181");
-
-        nogc.add(ret2);*/
         browsers.add(ret);
         return ret;
     }
@@ -217,7 +211,7 @@ public class ClientProxy extends BaseProxy {
     @Override
     public void openExampleBrowser(String url) {
         if (MCEF.ENABLE_EXAMPLE)
-            exampleMod.showScreen(url);
+            exampleMod.showScreen(MCEF.HOME_PAGE);
     }
 
     @Override
@@ -252,14 +246,6 @@ public class ClientProxy extends BaseProxy {
     public void onLogin(PlayerEvent.PlayerLoggedInEvent ev) {
         if (updateStr == null || !MCEF.WARN_UPDATES)
             return;
-
-        /*Style cs = Style.EMPTY;
-        cs.withColor(ChatFormatting.LIGHT_PURPLE);
-
-        MutableComponent cct = (MutableComponent) Component.nullToEmpty(updateStr);
-        cct.withStyle(cs);*/ // TODO STYLE UPDATE
-
-        //ev.getPlayer().displayClientMessage(cct, true);
     }
 
     public void removeBrowser(CefBrowserOsr b) {
