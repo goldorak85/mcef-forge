@@ -17,7 +17,7 @@ apply plugin: 'maven-publish'
 version = mod_version
 group = maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = archives_base_name
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {

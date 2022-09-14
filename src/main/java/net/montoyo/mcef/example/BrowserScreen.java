@@ -13,6 +13,7 @@ import net.montoyo.mcef.api.API;
 import net.montoyo.mcef.api.IBrowser;
 import net.montoyo.mcef.api.MCEFApi;
 import net.montoyo.mcef.easy_forge_compat.InputConstants;
+import org.cef.browser.CefBrowserOsr;
 import org.lwjgl.glfw.GLFW;
 
 public class BrowserScreen extends Screen {
@@ -208,8 +209,10 @@ public class BrowserScreen extends Screen {
             else
                 browser.injectKeyReleasedByKeyCode(keyCode, key, 0);
 
-            switch(keyCode) {
-                case GLFW.GLFW_KEY_BACKSPACE -> browser.injectKeyTyped(keyCode, 0); // //TODO REMAKE BAR
+            if (pressed) {
+                switch (keyCode) {
+                    case GLFW.GLFW_KEY_BACKSPACE -> browser.injectKeyTyped(keyCode, 0); // //TODO REMAKE BAR
+                }
             }
             return true; // Something did happen
         }

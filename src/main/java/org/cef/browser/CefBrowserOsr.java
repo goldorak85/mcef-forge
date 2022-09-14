@@ -161,6 +161,14 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
 
     @Override
     public void injectKeyTyped(int key, int mods) {
+        if (key == 257) {
+            key = '\r';
+        }
+        if (key == 259) {
+            runJS("if (document.activeElement) document.activeElement.value = document.activeElement.value.slice(0,-1);", "");
+            return;
+        }
+
         if( key != GLFW_KEY_BACKSPACE && key != VK_UNDEFINED) {
             KeyEvent ev = new UnsafeExample().makeEvent(dc_, key, (char) key, KEY_LOCATION_UNKNOWN, KEY_TYPED, 0, mods);
             sendKeyEvent(ev);
@@ -210,6 +218,12 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
 
     @Override
     public void injectKeyPressedByKeyCode(int keyCode, char c, int mods) {
+        if (keyCode == 257) { // Enter Key
+            keyCode = '\r';
+        }
+        if (keyCode == 259) { //Remove key
+            return;
+        }
         if (c != '\0') {
             synchronized (WORST_HACK) {
                 WORST_HACK.put(keyCode, c);
@@ -224,6 +238,12 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
 
     @Override
     public void injectKeyReleasedByKeyCode(int keyCode, char c, int mods) {
+        if (keyCode == 257) { // Enter Key
+            keyCode = '\r';
+        }
+        if (keyCode == 259) { //Remove key
+            return;
+        }
         if (c == '\0') {
             synchronized (WORST_HACK) {
                 c = WORST_HACK.getOrDefault(keyCode, '\0');
